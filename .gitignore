@@ -1,0 +1,15 @@
+# Security
+.env
+
+# Virtual Environments
+venv/
+env/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Local Exports (keeps your repository clean)
+exports/
+*.xlsx
+*.csv

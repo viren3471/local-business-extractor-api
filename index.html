@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Business Extractor UI</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f7f6; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); overflow-x: auto; }
+        h2 { color: #333; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
+        button { padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; white-space: nowrap; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        .error { color: red; font-weight: bold; }
+        .loading { font-style: italic; color: #555; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Anand Local Business Extractor</h2>
+    
+    <div class="search-box">
+        <input type="text" id="category" placeholder="Category (e.g., Restaurants, Doctors)" value="Restaurants">
+        <input type="text" id="city" placeholder="City (e.g., Anand)" value="Anand">
+        <button onclick="searchBusinesses()">Search API</button>
+    </div>
+
+    <div id="status" class="loading"></div>
+
+    <table id="resultsTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>Business Name</th>
+                <th>Category</th>
+                <th>Phone Number</th>
+                <th>Address</th>
+                <th>Website</th>
+                <th>Opening Hours</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Data will be injected here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    async function searchBusinesses() {
+        const category = document.getElementById('category').value;
+        const city = document.getElementById('city').value;
+        const statusDiv = document.getElementById('status');
+        const table = document.getElementById('resultsTable');
+        const tableBody = document.getElementById('tableBody');
+
+        statusDiv.innerHTML = "Fetching real data from API...";
+        statusDiv.className = "loading";
+        table.style.display = "none";
+        tableBody.innerHTML = "";
+
+        try {
+            const response = await fetch(`/api/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "API Error");
+            }
+
+            if (data.data.length === 0) {
+                statusDiv.innerHTML = "No records found for this category in OSM.";
+                statusDiv.className = "error";
+                return;
+            }
+
+            statusDiv.innerHTML = `Found ${data.data.length} records.`;
+            statusDiv.className = "";
+
+            data.data.forEach(business => {
+                // Make website clickable if it exists
+                let websiteHTML = business["Website"] !== "Not Available" 
+                    ? `<a href="${business["Website"]}" target="_blank">Visit Site</a>` 
+                    : "Not Available";
+
+                const row = `<tr>
+                    <td><strong>${business["Business Name"]}</strong></td>
+                    <td>${business["Business Category"]}</td>
+                    <td>${business["Phone Number"]}</td>
+                    <td>${business["Full Address"]}</td>
+                    <td>${websiteHTML}</td>
+                    <td>${business["Opening Hours"]}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+
+            table.style.display = "table";
+
+        } catch (error) {
+            statusDiv.innerHTML = `Error: ${error.message}`;
+            statusDiv.className = "error";
+        }
+    }
+</script>
+
+</body>
+</html>
